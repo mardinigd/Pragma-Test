@@ -269,7 +269,20 @@ fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhX
             event.preventDefault();
             userName = userNameInput.value.trim();
             if (!userName) { showModal('Por favor, ingresa tu nombre para comenzar.'); return; }
-            fetch(this.getAttribute('action'), { method: 'POST', body: new FormData(this), headers: { 'Accept': 'application/json' }})
+            fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhXhw9_cV57M3_phb95VnjDkmiY-jrJokCkLg/exec', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({ nombre: userName })
+})
+.then(res => res.text()) // <- ¡esto evita el error de JSON!
+.then(data => {
+  console.log("Nombre enviado:", data);
+  welcomeScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+  loadQuestion();
+})
+.catch(() => showModal("Error de red. Revisa tu conexión."));
+
             .then(response => {
                 if (response.ok) {
                     console.log("Nombre enviado.");
