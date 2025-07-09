@@ -256,9 +256,13 @@ fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhX
     ).join(' | ') || 'Ninguna'
   })
 })
+.then(res => res.text()) // <- No usar .json() aquí
+.then(data => {
+  console.log("Respuesta del servidor:", data);
+  // Continuar con el flujo del juego
+})
+.catch(err => console.error("Error de red:", err));
 
-            .then(res => console.log(res.ok ? "Resultados enviados." : "Error al enviar resultados."))
-            .catch(err => console.error("Error de red:", err));
         }
         modalCloseButton.addEventListener('click', () => { messageModal.classList.add('hidden'); messageModal.classList.remove('flex'); });
         document.getElementById('welcomeForm').addEventListener('submit', function(event) {
