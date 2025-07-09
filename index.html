@@ -11,7 +11,7 @@
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #e0e6ff; }
         :root { --pragma-purple: #6429CD; --pragma-purple-hover: #531dbc; --pragma-dark-gray: #1d1d1b; --error-bg: #FEE2E2; --error-text: #991B1B; --error-border: #FCA5A5; }
-        .duolingo-button { background-color: var(--pragma-purple); color: white; padding: 0.75rem 1.5rem; border-radius: 9999px; font-weight: 600; box-shadow: 0 4px 15px -2px rgba(100, 41, 205, 0.4); transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; border: none; }
+        .duolingo-button { background-color: var(--pragma-purple); color: white; padding: 0.75rem 1.5rem; border-radius: 9999px; font-weight: 600; box-shadow: 0 4px 15px -2px rgba(100, 41, 205, 0.4); transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s; border: none; cursor: pointer; }
         .duolingo-button:hover { transform: translateY(-2px); background-color: var(--pragma-purple-hover); box-shadow: 0 6px 20px -2px rgba(100, 41, 205, 0.5); }
         .duolingo-button:active { transform: translateY(1px); box-shadow: 0 2px 10px -2px rgba(100, 41, 205, 0.4); }
         .custom-input { background-color: white; border: 1px solid #E5E7EB; border-radius: 0.75rem; padding: 0.875rem 1rem; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -24,10 +24,11 @@
         .glassmorphism-card::after { top: 0; left: 0; width: 1px; height: 100%; background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent, rgba(255, 255, 255, 0.3)); }
         .progress-bar-container { background-color: #e0e6ff; border-radius: 9999px; height: 12px; width: 100%; overflow: hidden; }
         .progress-bar { height: 100%; width: 0%; background-color: var(--pragma-purple); border-radius: 9999px; transition: width 0.5s ease-in-out; }
-        .option-button { background-color: white; border: 2px solid #e1e6f0; color: var(--pragma-dark-gray); padding: 1rem; border-radius: 0.75rem; font-weight: 500; transition: background-color 0.2s, border-color 0.2s; text-align: left; width: 100%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
-        .option-button:hover { border-color: var(--pragma-purple); }
+        .option-button { background-color: white; border: 2px solid #e1e6f0; color: var(--pragma-dark-gray); padding: 1rem; border-radius: 0.75rem; font-weight: 500; transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s; text-align: left; width: 100%; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); cursor: pointer; }
+        .option-button:hover:not(:disabled) { border-color: var(--pragma-purple); }
         .option-button.correct { background-color: #F0FFF4; border-color: #9AE6B4; color: #276749; box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2); }
         .option-button.incorrect { background-color: var(--error-bg); border-color: var(--error-border); color: var(--error-text); box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2); }
+        .option-button:disabled { cursor: not-allowed; }
         .modal { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); }
         .modal-content { background-color: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); }
         button:focus { outline: none; box-shadow: 0 0 0 3px rgba(100, 41, 205, 0.4); }
@@ -50,7 +51,7 @@
         <h1>Test de Autoconocimiento</h1>
         <p class="text-center mb-4">Antes de empezar, por favor ingresa tu nombre:</p>
         
-        <form id="welcomeForm" method="POST" class="w-full">
+        <form id="welcomeForm" class="w-full">
             <input 
                 type="text" 
                 id="userNameInput" 
@@ -128,6 +129,31 @@
     </div>
 
     <script>
+        // --- Referencias a elementos del DOM ---
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const welcomeForm = document.getElementById('welcomeForm');
+        const userNameInput = document.getElementById('userNameInput');
+        const gameScreen = document.getElementById('gameScreen');
+        const progressBar = document.getElementById('progressBar');
+        const questionCount = document.getElementById('questionCount');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        const tipContainer = document.getElementById('tipContainer');
+        const nextButton = document.getElementById('nextButton');
+        const resultsWrapper = document.getElementById('resultsWrapper');
+        const reviewQuizButton = document.getElementById('reviewQuizButton');
+        const restartButton = document.getElementById('restartButton');
+        const reviewScreen = document.getElementById('reviewScreen');
+        const incorrectAnswersContainer = document.getElementById('incorrectAnswersContainer');
+        const restartFromReviewButton = document.getElementById('restartFromReviewButton');
+        const messageModal = document.getElementById('messageModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalCloseButton = document.getElementById('modalCloseButton');
+
+        // --- URL del Script de Google ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhXhw9_cV57M3_phb95VnjDkmiY-jrJokCkLg/exec';
+
         // --- Lógica del Juego ---
         const questions = [
             { question: "¿Cuál es el propósito principal del autoconocimiento?", options: ["A. Mejorar la memoria", "B. Conocerse y tomar decisiones alineadas", "C. Ser más competitivo", "D. Evitar problemas"], correctAnswer: "B. Conocerse y tomar decisiones alineadas", fallbackTip: "El autoconocimiento es tu brújula para vivir con propósito y autenticidad." },
@@ -139,31 +165,15 @@
             { question: "¿Cuál de estas NO es una herramienta recomendada para el autoconocimiento?", options: ["A. Diario personal", "B. Mindfulness", "C. Test CliftonStrengths", "D. Ver televisión"], correctAnswer: "D. Ver televisión", fallbackTip: "Aunque entretiene, ver televisión no es una herramienta directa para conocerte." },
             { question: "¿Qué beneficio trae escribir lo que sientes diariamente?", options: ["A. Aumenta el estrés", "B. Ignora patrones", "C. Te conecta con tus emociones", "D. Mejora tu ortografía"], correctAnswer: "C. Te conecta con tus emociones", fallbackTip: "Escribir te ayuda a ver patrones emocionales y el foco es entenderte mejor." }
         ];
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const userNameInput = document.getElementById('userNameInput');
-        const gameScreen = document.getElementById('gameScreen');
-        const progressBar = document.getElementById('progressBar');
-        const questionCount = document.getElementById('questionCount');
-        const questionText = document.getElementById('questionText');
-        const optionsContainer = document.getElementById('optionsContainer');
-        const feedbackContainer = document.getElementById('feedbackContainer');
-        const tipContainer = document.getElementById('tipContainer');
-        const nextButton = document.getElementById('nextButton');
-        const resultsWrapper = document.getElementById('resultsWrapper'); 
-        const reviewQuizButton = document.getElementById('reviewQuizButton'); 
-        const restartButton = document.getElementById('restartButton');
-        const reviewScreen = document.getElementById('reviewScreen'); 
-        const incorrectAnswersContainer = document.getElementById('incorrectAnswersContainer');
-        const restartFromReviewButton = document.getElementById('restartFromReviewButton');
-        const messageModal = document.getElementById('messageModal');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalCloseButton = document.getElementById('modalCloseButton');
+
         let currentQuestionIndex = 0, score = 0, userName = '', selectedOptionButton = null, incorrectAnswers = [], audioContext;
+
         function showModal(message) {
             modalMessage.textContent = message;
-            messageModal.classList.remove('hidden'); 
+            messageModal.classList.remove('hidden');
             messageModal.classList.add('flex');
         }
+
         function playSound(type) {
             try {
                 if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -186,20 +196,40 @@
                 oscillator.start(audioContext.currentTime);
             } catch (e) { console.error("No se pudo reproducir el sonido:", e); }
         }
-        function displayPredefinedTip(tip) { tipContainer.classList.remove('hidden'); tipContainer.textContent = `🧠 Tip: ${tip}`; }
-        function updateProgressBar() { progressBar.style.width = `${(currentQuestionIndex / questions.length) * 100}%`; }
+
+        function displayPredefinedTip(tip) {
+            tipContainer.classList.remove('hidden');
+            tipContainer.textContent = `🧠 Tip: ${tip}`;
+        }
+
+        function updateProgressBar() {
+            progressBar.style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+        }
+
         function restartGame() {
-            currentQuestionIndex = 0, score = 0, userName = '', incorrectAnswers = [], userNameInput.value = '';
+            currentQuestionIndex = 0;
+            score = 0;
+            userName = '';
+            incorrectAnswers = [];
+            userNameInput.value = '';
             reviewScreen.classList.add('hidden');
             resultsWrapper.classList.add('hidden');
+            gameScreen.classList.add('hidden');
             welcomeScreen.classList.remove('hidden');
+            progressBar.style.width = '0%';
         }
+
         function loadQuestion() {
-            optionsContainer.innerHTML = '', feedbackContainer.classList.add('hidden'), tipContainer.classList.add('hidden'), nextButton.classList.add('hidden'), selectedOptionButton = null;
+            optionsContainer.innerHTML = '';
+            feedbackContainer.classList.add('hidden');
+            tipContainer.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            selectedOptionButton = null;
+
             const currentQuestion = questions[currentQuestionIndex];
             questionText.textContent = currentQuestion.question;
             questionCount.textContent = `${currentQuestionIndex + 1}/${questions.length}`;
-            updateProgressBar();
+            
             currentQuestion.options.forEach(option => {
                 const button = document.createElement('button');
                 button.textContent = option;
@@ -208,97 +238,89 @@
                 optionsContainer.appendChild(button);
             });
         }
-        async function selectOption(button, selectedOption, correctAnswer, fallbackTip) {
+
+        function selectOption(button, selectedOption, correctAnswer, fallbackTip) {
             if (selectedOptionButton) return;
             selectedOptionButton = button;
             Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+            
             displayPredefinedTip(fallbackTip);
-            nextButton.classList.remove('hidden'); 
+            nextButton.classList.remove('hidden');
+
             if (selectedOption === correctAnswer) {
                 score++;
                 button.classList.add('correct');
-                feedbackContainer.classList.remove('hidden');
                 feedbackContainer.innerHTML = '✅ ¡Correcto!';
-                feedbackContainer.style.backgroundColor = '#D1FAE5';
-                feedbackContainer.style.color = '#065F46';
+                feedbackContainer.className = 'mt-6 p-4 w-full text-center font-semibold rounded-lg bg-green-100 text-green-800';
                 playSound('correct');
             } else {
                 button.classList.add('incorrect');
-                feedbackContainer.classList.remove('hidden');
                 feedbackContainer.textContent = 'Incorrecto. La respuesta correcta era: ' + correctAnswer;
-                feedbackContainer.style.backgroundColor = 'var(--error-bg)';
-                feedbackContainer.style.color = 'var(--error-text)';
+                feedbackContainer.className = 'mt-6 p-4 w-full text-center font-semibold rounded-lg bg-red-100 text-red-800';
                 incorrectAnswers.push({ question: questions[currentQuestionIndex].question, userAnswer: selectedOption, correctAnswer, tip: fallbackTip });
-                Array.from(optionsContainer.children).forEach(btn => { if (btn.textContent === correctAnswer) btn.classList.add('correct'); });
+                Array.from(optionsContainer.children).forEach(btn => {
+                    if (btn.textContent === correctAnswer) btn.classList.add('correct');
+                });
                 playSound('incorrect');
             }
+            feedbackContainer.classList.remove('hidden');
         }
+
         function showResults() {
             gameScreen.classList.add('hidden');
-            resultsWrapper.classList.remove('hidden'); // Muestra el contenedor principal
+            resultsWrapper.classList.remove('hidden');
             document.getElementById('finalUserName').textContent = userName;
             document.getElementById('scoreDisplay').textContent = score;
             document.getElementById('totalQuestionsDisplay').textContent = questions.length;
-            progressBar.style.width = '100%';
-            const resultsData = {
-                nombre: userName,
-                puntuacion: `${score} de ${questions.length}`,
-                respuestas_incorrectas: incorrectAnswers.map(item => `Pregunta: '${item.question}' - Respuesta: '${item.userAnswer}'`).join('; ') || 'Ninguna'
-            };
-fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhXhw9_cV57M3_phb95VnjDkmiY-jrJokCkLg/exec', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: new URLSearchParams({
-    nombre: userName,
-    puntuacion: `${score} de ${questions.length}`,
-    respuestas_incorrectas: incorrectAnswers.map(item =>
-      `Pregunta: "${item.question}" - Respondió: "${item.userAnswer}" - Correcta: "${item.correctAnswer}"`
-    ).join(' | ') || 'Ninguna'
-  })
-})
-.then(res => res.text()) // <- No usar .json() aquí
-.then(data => {
-  console.log("Respuesta del servidor:", data);
-  // Continuar con el flujo del juego
-})
-.catch(err => console.error("Error de red:", err));
+            
+            // Prepara los datos para enviar
+            const formData = new FormData();
+            formData.append('nombre', userName);
+            formData.append('puntuacion', `${score} de ${questions.length}`);
+            formData.append('respuestas_incorrectas', incorrectAnswers.map(item =>
+                `Pregunta: "${item.question}" - Respondió: "${item.userAnswer}" - Correcta: "${item.correctAnswer}"`
+            ).join(' | ') || 'Ninguna');
 
+            // Envía los resultados finales
+            fetch(SCRIPT_URL, { method: 'POST', body: formData })
+                .then(response => response.text())
+                .then(data => {
+                    console.log("Resultados enviados:", data);
+                })
+                .catch(err => {
+                    console.error("Error al enviar resultados:", err);
+                    showModal("Hubo un error al guardar tus resultados. Revisa la consola para más detalles.");
+                });
         }
-        modalCloseButton.addEventListener('click', () => { messageModal.classList.add('hidden'); messageModal.classList.remove('flex'); });
-        document.getElementById('welcomeForm').addEventListener('submit', function(event) {
+
+        // --- Event Listeners ---
+
+        welcomeForm.addEventListener('submit', function(event) {
             event.preventDefault();
             userName = userNameInput.value.trim();
-            if (!userName) { showModal('Por favor, ingresa tu nombre para comenzar.'); return; }
-            fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhXhw9_cV57M3_phb95VnjDkmiY-jrJokCkLg/exec', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: new URLSearchParams({ nombre: userName })
-})
-.then(res => res.text()) // <- ¡esto evita el error de JSON!
-.then(data => {
-  console.log("Nombre enviado:", data);
-  welcomeScreen.classList.add('hidden');
-  gameScreen.classList.remove('hidden');
-  loadQuestion();
-})
-.catch(() => showModal("Error de red. Revisa tu conexión."));
+            if (!userName) {
+                showModal('Por favor, ingresa tu nombre para comenzar.');
+                return;
+            }
 
-            .then(response => {
-                if (response.ok) {
-                    console.log("Nombre enviado.");
-                    welcomeScreen.classList.add('hidden');
-                    gameScreen.classList.remove('hidden');
-                    loadQuestion();
-                } else {
-                    response.json().then(data => showModal(data.errors ? `Error: ${data.errors.map(e => e.message).join(", ")}` : "Oops! Hubo un problema."));
-                }
-            })
-            .catch(() => showModal("Error de red. Revisa tu conexión."));
+            // Aquí solo se valida el nombre y se inicia el juego.
+            // El envío de datos se hará al final.
+            welcomeScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            updateProgressBar(); // Muestra la barra en la primera pregunta
+            loadQuestion();
         });
+
         nextButton.addEventListener('click', () => {
             currentQuestionIndex++;
-            currentQuestionIndex < questions.length ? loadQuestion() : showResults();
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+                updateProgressBar();
+            } else {
+                showResults();
+            }
         });
+
         reviewQuizButton.addEventListener('click', () => {
             resultsWrapper.classList.add('hidden');
             reviewScreen.classList.remove('hidden');
@@ -306,14 +328,20 @@ fetch('https://script.google.com/macros/s/AKfycbwuJnHE0Kvd80D0jYo4jWwhSCcayjgXhX
             if (incorrectAnswers.length === 0) {
                 incorrectAnswersContainer.innerHTML = '<p class="text-gray-600 text-center">¡Excelente! Respondiste todo correctamente.</p>';
             } else {
-                incorrectAnswers.forEach((answer, index) => {
+                incorrectAnswers.forEach((answer) => {
                     const item = document.createElement('div');
                     item.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
-                    item.innerHTML = `<p class="font-semibold text-lg mb-2">Pregunta ${index + 1}: ${answer.question}</p><p class="text-red-600 mb-1">Tu respuesta: ${answer.userAnswer} (Incorrecta)</p><p class="text-purple-600 mb-2">Respuesta correcta: ${answer.correctAnswer}</p><p class="text-gray-700 text-sm">🧠 Tip: ${answer.tip}</p>`;
+                    item.innerHTML = `<p class="font-semibold text-lg mb-2">Pregunta: ${answer.question}</p><p class="text-red-600 mb-1">Tu respuesta: ${answer.userAnswer} (Incorrecta)</p><p class="text-purple-600 mb-2">Respuesta correcta: ${answer.correctAnswer}</p><p class="text-gray-700 text-sm">🧠 Tip: ${answer.tip}</p>`;
                     incorrectAnswersContainer.appendChild(item);
                 });
             }
         });
+        
+        modalCloseButton.addEventListener('click', () => {
+            messageModal.classList.add('hidden');
+            messageModal.classList.remove('flex');
+        });
+
         restartFromReviewButton.addEventListener('click', restartGame);
         restartButton.addEventListener('click', restartGame);
     </script>
